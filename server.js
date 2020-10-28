@@ -67,3 +67,13 @@ function runInterface() {
             }
         });
 }
+
+function viewDRE() {
+    var query = "select employee.id, employee.first_name, employee.last_name, department.name, role.title, role.salary" 
+    + "from employee inner join (role inner join department on role.department_id = department.id) on employee.role_id = role.id"
+    +";";
+    connection.query(query, function(err, res){
+        if(err)throw err;
+        console.table(res);
+    })
+}
