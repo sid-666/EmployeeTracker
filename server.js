@@ -77,3 +77,27 @@ function viewDRE() {
         console.table(res);
     })
 }
+
+function viewEmpbyMan(){
+    var query = "SELECT CONCAT(m.first_name, ' ', m.last_name) as managers from employees e INNER JOIN employees m ON m.managers_id = e.id"
+    connection.query(query, function(err, res){
+        inquirer.prompt({
+            name: "manager",
+            type: "rawlist",
+            message: "Who is the manager?",
+            choices: function(){
+                var choiceArray = [];
+                for (var i = 0; i < res.length; i++) {
+                  choiceArray.push(res[i].managers);
+                }
+                return choiceArray;
+            }
+        }).then(function(answer){
+            var query = "select concat(e.first_name, ' ',e.last_name) as normalemployee CONCAT(m.first_name, ' ', m.last_name) as manager from employee e INNER JOIN employees m on e.id = m.managers_id where ?"
+            connection.query(query, {manager: answer.manager}, function(err, res){
+                if(err)throw err;
+                console.table(res)
+            })
+        })
+    })
+}
