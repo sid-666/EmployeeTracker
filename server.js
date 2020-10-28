@@ -117,7 +117,7 @@ function utilBudget(){
                 return choiceArray;
             }
         }).then(function(answer){
-            var query = "SELECT department.name, employee.id, SUM(role.salary) FROM employee inner join (role INNER JOIN department ON role.department_id = department.id) ON employee.role_id = role.id WHERE ?"
+            var query = "SELECT SUM(role.salary) FROM employee inner join (role INNER JOIN department ON role.department_id = department.id) ON employee.role_id = role.id WHERE ?"
             +";";
             connection.query(query, {department:{name: answer.department}}, function(err,res){
                 if(err)throw err;
