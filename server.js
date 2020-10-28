@@ -19,40 +19,50 @@ connection.connect(function (err) {
     runInterface();
 });
 
-function runSearch() {
+function runInterface() {
     inquirer
         .prompt({
             name: "action",
             type: "rawlist",
             message: "What would you like to do?",
             choices: [
-                "Find songs by artist",
-                "Find all artists who appear more than once",
-                "Find data within a specific range",
-                "Search for a specific song",
-                "Find artists with a top song and top album in the same year"
+                "View department, roles and employees",
+                "View Employees by Managers",
+                "Combined salaries of all employees in that department",
+                "Add department, roles and employees",
+                "Update employee roles",
+                "Update employee managers",
+                "Delete department, roles and employees"
             ]
         })
         .then(function (answer) {
             switch (answer.action) {
-                case "Find songs by artist":
-                    artistSearch();
+                case "View department, roles and employees":
+                    viewDRE();
                     break;
 
-                case "Find all artists who appear more than once":
-                    multiSearch();
+                case "View Employees by Managers":
+                    viewEmpbyMan();
                     break;
 
-                case "Find data within a specific range":
-                    rangeSearch();
+                case "Combined salaries of all employees in that department":
+                    utilBudget();
                     break;
 
-                case "Search for a specific song":
-                    songSearch();
+                case "Add department, roles and employees":
+                    addDepRolEmp();
                     break;
 
-                case "Find artists with a top song and top album in the same year":
-                    songAndAlbumSearch();
+                case "Update employee roles":
+                    updateRoles();
+                    break;
+
+                case "Update employee managers":
+                    updateManagers();
+                    break;
+
+                case "Delete department, roles and employees":
+                    deleteDepRolEmp();
                     break;
             }
         });
