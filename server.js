@@ -101,3 +101,29 @@ function viewEmpbyMan(){
         })
     })
 }
+
+function utilBudget(){
+    var query = "SELECT name FROM department";
+    connection.query(query, function(err, res){
+        inquirer.prompt({
+            name: "department",
+            type: "rawlist",
+            message: "Which department's budget do you want to check?",
+            choices: function(){
+                var choiceArray = [];
+                for (var i = 0; i < res.length; i++) {
+                  choiceArray.push(res[i].name);
+                }
+                return choiceArray;
+            }
+        }).then(function(answer){
+            var query = "SELECT department.name, employee.id, SUM(role.salary) FROM employee inner join (role INNER JOIN department ON role.department_id = department.id) ON employee.role_id = role.id WHERE ?"
+            +";";
+            connection.query(query, {department:{name: answer.department}}, function(err,res){
+                if(err)throw err;
+                console.table(res)
+            })
+        })
+    })
+}
+
