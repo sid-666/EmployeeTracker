@@ -70,12 +70,13 @@ function runInterface() {
 }
 
 function viewDRE() {
-    var query = "select employee.id, employee.first_name, employee.last_name, department.name, role.title, role.salary" 
-    + "from employee inner join (role inner join department on role.department_id = department.id) on employee.role_id = role.id"
+    var query = "select employees.id, employees.first_name, employees.last_name, departments.name, roles.title, roles.salary" 
+    + "from employees inner join (roles inner join departments on roles.department_id = departments.id) on employees.role_id = roles.id"
     +";";
     connection.query(query, function(err, res){
         if(err)throw err;
         console.table(res);
+        runInterface()
     })
 }
 
@@ -89,22 +90,23 @@ function viewEmpbyMan(){
             choices: function(){
                 var choiceArray = [];
                 for (var i = 0; i < res.length; i++) {
-                  choiceArray.push(res[i].managers);
+                  choiceArray.push(res[i].manager);
                 }
                 return choiceArray;
             }
         }).then(function(answer){
-            var query = "select concat(e.first_name, ' ',e.last_name) as normalemployee CONCAT(m.first_name, ' ', m.last_name) as manager from employee e INNER JOIN employees m on e.id = m.managers_id where ?"
+            var query = "select concat(e.first_name, ' ',e.last_name) as normalemployee CONCAT(m.first_name, ' ', m.last_name) as manager from employees e INNER JOIN employees m on e.id = m.manager_id where ?"
             connection.query(query, {manager: answer.manager}, function(err, res){
                 if(err)throw err;
                 console.table(res)
+                runInterface()
             })
         })
     })
 }
 
 function utilBudget(){
-    var query = "SELECT name FROM department";
+    var query = "SELECT name FROM departments";
     connection.query(query, function(err, res){
         inquirer.prompt({
             name: "department",
@@ -118,11 +120,12 @@ function utilBudget(){
                 return choiceArray;
             }
         }).then(function(answer){
-            var query = "SELECT SUM(role.salary) FROM employee inner join (role INNER JOIN department ON role.department_id = department.id) ON employee.role_id = role.id WHERE ?"
+            var query = "SELECT SUM(role.salary) FROM employees inner join (roles INNER JOIN departments ON roles.department_id = departments.id) ON employees.role_id = roles.id WHERE ?"
             +";";
-            connection.query(query, {department:{name: answer.department}}, function(err,res){
+            connection.query(query, {departments:{name: answer.department}}, function(err,res){
                 if(err)throw err;
                 console.table(res)
+                runInterface()
             })
         })
     })
@@ -156,10 +159,11 @@ function addDepartment(){
         type: "input",
         message: "What is the department name?",
     }).then(function(answer){
-        var query = "INSERT INTO department (name) VALUES (?)"
+        var query = "INSERT INTO departments (name) VALUES (?)"
         connection.query(query, {name: answer.add_dep}, function(err){
             if (err) throw err;
             console.log("Succesfully inserted")
+            runInterface()
         })
     })
 }
@@ -188,7 +192,7 @@ function addRoles(){
             }
         },
     ]
-    connection.query("SELECT id FROM department", function(err, res){
+    connection.query("SELECT id FROM departments", function(err, res){
         inquirer.prompt(questions).then(function(answer){
             var query = "INSERT INTO roles (title, salary, department_id) VALUES (?)"
             connection.query(query, 
@@ -199,6 +203,7 @@ function addRoles(){
                 function(err){
                 if (err) throw err;
                 console.log("Succesfully inserted")
+                runInterface()
             })
         })
     })
@@ -235,7 +240,7 @@ function addEmployee(){
     ]
     connection.query("SELECT id FROM roles", function(err, res){
         inquirer.prompt(questions).then(function(answer){
-            var query = "INSERT INTO roles (title, salary, department_id) VALUES (?)"
+            var query = "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?)"
             connection.query(query, 
                 {first_name: answer.add_employee_Fname,
                  last_name: answer.add_employee_Lname, 
@@ -245,6 +250,7 @@ function addEmployee(){
                 function(err){
                 if (err) throw err;
                 console.log("Succesfully inserted")
+                runInterface()
             })
         })
     })
@@ -284,11 +290,12 @@ function updateRoles(){
         ]
         inquirer.prompt(questions).then(function(answer){
             var question = "SELECT id FROM roles WHERE ?";
-            connection.query(question, {name: answer.update_emprole}, function(err, res){
+            connection.query(question, {title: answer.update_emprole}, function(err, res){
                 if(err) throw err;
-                connection.query("UPDATE employee SET ? WHERE ?", [{role_id: res.id}, {id: answer.update_employee}],function(err){
+                connection.query("UPDATE employees SET ? WHERE ?", [{role_id: res.id}, {id: answer.update_employee}],function(err){
                     if(err) throw err;
                     console.log("update succesful!!")
+                    runInterface()
                 })
             })
         })
@@ -326,9 +333,10 @@ function updateManagers(){
 
         ]
         inquirer.prompt(questions).then(function(answer){
-            connection.query("UPDATE employee SET ? WHERE ?", [{manager_id: answer.update_empman}, {id: answer.update_employee}],function(err){
+            connection.query("UPDATE employees SET ? WHERE ?", [{manager_id: answer.update_empman}, {id: answer.update_employee}],function(err){
                 if(err) throw err;
                 console.log("update succesful!!")
+                runInterface()
             })
         })
     })
@@ -362,10 +370,11 @@ function delDepartment(){
         type: "input",
         message: "What is the department name?",
     }).then(function(answer){
-        var query = "DELETE FROM department WHERE ?"
+        var query = "DELETE FROM departments WHERE ?"
         connection.query(query, {name: answer.del_dep}, function(err){
             if (err) throw err;
             console.log("Succesfully deleted")
+            runInterface()
         })
     })
 }
@@ -386,6 +395,7 @@ function delRoles(){
             function(err){
             if (err) throw err;
             console.log("Succesfully deleted")
+            runInterface()
         })
     })
 }
@@ -415,6 +425,7 @@ function delEmployee(){
                 function(err){
                 if (err) throw err;
                 console.log("Succesfully deleted")
+                runInterface()
             })
         })
     })
