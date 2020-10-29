@@ -259,10 +259,10 @@ function updateRoles(){
                 type: "rawlist",
                 message: "Which employees role do you want to change?",
                 choice: function(){
-                    let res = res[1];
+                    let response = res[1];
                     var choiceArray = []
-                    for (var i = 0; i < res.length; i++) {
-                        choiceArray.push(res[i].id);
+                    for (var i = 0; i < response.length; i++) {
+                        choiceArray.push(response[i].id);
                       }
                       return choiceArray;
                 }
@@ -272,7 +272,50 @@ function updateRoles(){
                 type: "rawlist",
                 message: "What role do you wnat to change to?",
                 choice: function(){
-                    let res = res[0];
+                    let response = res[0];
+                    var choiceArray = []
+                    for (var i = 0; i < response.length; i++) {
+                        choiceArray.push(response[i].name);
+                      }
+                      return choiceArray;
+                }
+            }
+
+        ]
+        inquirer.prompt(questions).then(function(answer){
+            var question = "SELECT id FROM roles WHERE ?";
+            connection.query(question, {name: answer.update_emprole}, function(err, res){
+                if(err) throw err;
+                connection.query("UPDATE employee SET ? WHERE ?", [{role_id: res.id}, {id: answer.update_employee}],function(err){
+                    if(err) throw err;
+                    console.log("update succesful!!")
+                })
+            })
+        })
+    })
+}
+
+function updateManagers(){
+    connection.query("SELECT id FROM employees", function(err,res){
+        if(err) throw err;
+        var questions = [
+            {
+                name: "update_employee",
+                type: "rawlist",
+                message: "Which employees manager do you want to change?",
+                choice: function(){
+                    var choiceArray = []
+                    for (var i = 0; i < res.length; i++) {
+                        choiceArray.push(res[i].id);
+                      }
+                      return choiceArray;
+                }
+            },
+            {
+                name: "update_empman",
+                type: "rawlist",
+                message: "What manager do you wnat to change to?",
+                choice: function(){
                     var choiceArray = []
                     for (var i = 0; i < res.length; i++) {
                         choiceArray.push(res[i].name);
@@ -283,12 +326,9 @@ function updateRoles(){
 
         ]
         inquirer.prompt(questions).then(function(answer){
-            var question = "SELECT id FROM roles WHERE ?";
-            connection.query(question, {name: answer.update_emprole}, function(err, res){
-                connection.query("UPDATE employee SET ? WHERE ?", [{role_id: res.id}, {id: answer.update_employee}],function(err, res){
-                    if(err) throw err;
-                    console.log("update succesful!!")
-                })
+            connection.query("UPDATE employee SET ? WHERE ?", [{manager_id: answer.update_empman}, {id: answer.update_employee}],function(err){
+                if(err) throw err;
+                console.log("update succesful!!")
             })
         })
     })
