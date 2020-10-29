@@ -127,3 +127,125 @@ function utilBudget(){
     })
 }
 
+function addDepRolEmp(){
+    inquirer.prompt({
+        name: "add",
+        type: "rawlist",
+        message: "Which field do you want to add data in?",
+        choices: ["department", "roles", "employee"]
+    }).then(function(answer){
+        switch (answer.add) {
+            case "department":
+                addDepartment();
+                break;
+
+            case "roles":
+                addRoles();
+                break;
+
+            case "employee":
+                addEmployee();
+                break;
+        }
+    })
+}
+function addDepartment(){
+    inquirer.prompt({
+        name: "add_dep",
+        type: "input",
+        message: "What is the department name?",
+    }).then(function(answer){
+        var query = "INSERT INTO department (name) VALUES (?)"
+        connection.query(query, {name: answer.add_dep}, function(err){
+            if (err) throw err;
+            console.log("Succesfully inserted")
+        })
+    })
+}
+function addRoles(){
+    var questions = [
+        {
+            name: "add_role_title",
+            type: "input",
+            message: "What is the role name?"
+        },
+        {
+            name: "add_role_salary",
+            type: "input",
+            message: "What is the salary for this role?"
+        },
+        {
+            name: "add_role_depid",
+            type: "rawlist",
+            message: "What department_id is associated with this role?",
+            choices: function(){
+                var choiceArray = [];
+                for (var i = 0; i < res.length; i++) {
+                  choiceArray.push(res[i].id);
+                }
+                return choiceArray;
+            }
+        },
+    ]
+    connection.query("SELECT id FROM department", function(err, res){
+        inquirer.prompt(questions).then(function(answer){
+            var query = "INSERT INTO roles (title, salary, department_id) VALUES (?)"
+            connection.query(query, 
+                {name: answer.add_role_title,
+                 salary: answer.add_role_salary, 
+                 department_id: answer.add_role_depid
+                }, 
+                function(err){
+                if (err) throw err;
+                console.log("Succesfully inserted")
+            })
+        })
+    })
+}
+function addEmployee(){
+    var questions = [
+        {
+            name: "add_employee_Fname",
+            type: "input",
+            message: "What is the employee's first name?"
+        },
+        {
+            name: "add_employee_Lname",
+            type: "input",
+            message: "What is the employee's last name?"
+        },
+        {
+            name: "add_employee_roleid",
+            type: "rawlist",
+            message: "What role_id is associated with this employee?",
+            choices: function(){
+                var choiceArray = [];
+                for (var i = 0; i < res.length; i++) {
+                  choiceArray.push(res[i].id);
+                }
+                return choiceArray;
+            }
+        },
+        {
+            name: "add_employee_managerid",
+            type: "input",
+            message: "What is this employees managers manager_id?"
+        }
+    ]
+    connection.query("SELECT id FROM roles", function(err, res){
+        inquirer.prompt(questions).then(function(answer){
+            var query = "INSERT INTO roles (title, salary, department_id) VALUES (?)"
+            connection.query(query, 
+                {first_name: answer.add_employee_Fname,
+                 last_name: answer.add_employee_Lname, 
+                 role_id: answer.add_employee_roleid,
+                 manager_id: answer.add_employee_managerid
+                }, 
+                function(err){
+                if (err) throw err;
+                console.log("Succesfully inserted")
+            })
+        })
+    })
+}
+
