@@ -12,7 +12,8 @@ var connection = mysql.createConnection({
 
     // Your password
     password: "Drss@803",
-    database: "employee_tracker_DB"
+    database: "employee_tracker_DB",
+    multipleStatements: true
 });
 connection.connect(function (err) {
     if (err) throw err;
@@ -248,4 +249,49 @@ function addEmployee(){
         })
     })
 }
+
+function updateRoles(){
+    connection.query("SELECT title FROM roles; SELECT id FROM employees", function(err,res){
+        if(err) throw err;
+        var questions = [
+            {
+                name: "update_employee",
+                type: "rawlist",
+                message: "Which employees role do you want to change?",
+                choice: function(){
+                    let res = res[1];
+                    var choiceArray = []
+                    for (var i = 0; i < res.length; i++) {
+                        choiceArray.push(res[i].id);
+                      }
+                      return choiceArray;
+                }
+            },
+            {
+                name: "update_emprole",
+                type: "rawlist",
+                message: "What role do you wnat to change to?",
+                choice: function(){
+                    let res = res[0];
+                    var choiceArray = []
+                    for (var i = 0; i < res.length; i++) {
+                        choiceArray.push(res[i].name);
+                      }
+                      return choiceArray;
+                }
+            }
+
+        ]
+        inquirer.prompt(questions).then(function(answer){
+            var question = "SELECT id FROM roles WHERE ?";
+            connection.query(question, {name: answer.update_emprole}, function(err, res){
+                connection.query("UPDATE employee SET ? WHERE ?", [{role_id: res.id}, {id: answer.update_employee}],function(err, res){
+                    if(err) throw err;
+                    console.log("update succesful!!")
+                })
+            })
+        })
+    })
+}
+
 
