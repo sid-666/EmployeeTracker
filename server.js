@@ -334,4 +334,88 @@ function updateManagers(){
     })
 }
 
+function deleteDepRolEmp(){
+    inquirer.prompt({
+        name: "delete",
+        type: "rawlist",
+        message: "Which field do you want to delete data from?",
+        choices: ["department", "roles", "employee"]
+    }).then(function(answer){
+        switch (answer.add) {
+            case "department":
+                delDepartment();
+                break;
 
+            case "roles":
+                delRoles();
+                break;
+
+            case "employee":
+                delEmployee();
+                break;
+        }
+    })
+}
+function delDepartment(){
+    inquirer.prompt({
+        name: "del_dep",
+        type: "input",
+        message: "What is the department name?",
+    }).then(function(answer){
+        var query = "DELETE FROM department WHERE ?"
+        connection.query(query, {name: answer.del_dep}, function(err){
+            if (err) throw err;
+            console.log("Succesfully deleted")
+        })
+    })
+}
+
+function delRoles(){
+    var questions = [
+        {
+            name: "del_role_title",
+            type: "input",
+            message: "What is the role name?"
+        },
+    ]
+
+    inquirer.prompt(questions).then(function(answer){
+        var query = "DELETE FROM roles WHERE ?"
+        connection.query(query, 
+            {name: answer.del_role_title}, 
+            function(err){
+            if (err) throw err;
+            console.log("Succesfully deleted")
+        })
+    })
+}
+
+function delEmployee(){
+    var questions = [
+        {
+            name: "del_employee",
+            type: "rawlist",
+            message: "What is the employee's employee id?",
+            choices: function(){
+                var choiceArray = [];
+                for (var i = 0; i < res.length; i++) {
+                  choiceArray.push(res[i].id);
+                }
+                return choiceArray;
+            }
+        }
+    ]
+    connection.query("SELECT id FROM employees", function(err, res){
+        inquirer.prompt(questions).then(function(answer){
+            var query = "DELETE FROM employees WHERE?"
+            connection.query(query, 
+                { 
+                 id: answer.del_employee
+                }, 
+                function(err){
+                if (err) throw err;
+                console.log("Succesfully deleted")
+            })
+        })
+    })
+}
