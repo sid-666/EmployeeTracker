@@ -70,10 +70,9 @@ function runInterface() {
 }
 
 function viewDRE() {
-    var query = "SELECT employees.id, employees.first_name, employees.last_name, departments.name, roles.title, roles.salary FROM employees JOIN roles ON employees.role_id = roles.id JOIN departments ON departments.id = roles.department_id;"
+    var query = "SELECT employees.id, employees.first_name, employees.last_name, departments.name AS department, roles.title AS role, roles.salary FROM employees JOIN roles ON employees.role_id = roles.id JOIN departments ON departments.id = roles.department_id;"
     connection.query(query, function (err, res) {
         if (err) throw err;
-        console.log(res)
         console.table(res);
         runInterface()
     })
@@ -100,17 +99,12 @@ function viewEmpbyMan() {
                 return Managers;
             }
         }).then((answer) => {
-            console.log(answer);
             connection.query("SELECT id FROM employees WHERE ? AND ?", [{ first_name: answer.manager.split(" ")[0] }, { last_name: answer.manager.split(" ")[1] }], function (err, res) {
-                console.log(res);
-                console.log(res[0].id);
-                var query = "select concat(m.first_name, ' ',m.last_name) as manager, CONCAT(e.first_name, ' ', e.last_name) as employee from employees e INNER JOIN employees m on m.id = e.manager_id WHERE ?;";
-                connection.query(query, [6], function (err, res) {
+                var query = "select concat(m.first_name, ' ',m.last_name) as manager, CONCAT(e.first_name, ' ', e.last_name) as employee from employees e INNER JOIN employees m on m.id = e.manager_id WHERE m.id = ?;";
+                connection.query(query, [res[0].id], function (err, res) {
                     if (err)
                         throw err;
-                    console.log(res);
                     console.table(res);
-                    console.log("hello")
                     runInterface();
                 });
             });
@@ -230,7 +224,6 @@ function addRoles() {
 }
 function addEmployee() {
     connection.query("SELECT id FROM roles; SELECT id FROM employees", function (err, res) {
-        console.log(res[1])
         inquirer.prompt([
             {
                 name: "add_employee_Fname",
@@ -257,41 +250,37 @@ function addEmployee() {
             },
             {
                 name: "add_employee_managerid",
-                type: "input",
+                type: "rawlist",
                 message: "What is this employees managers manager_id?",
-                validate: function (answer) {
+                choices: function () {
                     let response = res[1]
+                    var choiceArray = ['null'];
                     for (var i = 0; i < response.length; i++) {
-                        if (answer == response[i].id) {
-                            return true
-                        }
+                        choiceArray.push(response[i].id);
                     }
-                    return "try again"
+                    return choiceArray;
                 }
-            }
-        ]).then(function (answer) {
-            var query = "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)"
-            connection.query(query,
-                [
-                    answer.add_employee_Fname,
-                    answer.add_employee_Lname,
-                    parseInt(answer.add_employee_roleid),
-                    parseInt(answer.add_employee_managerid)
-                ],
-                function (err) {
-                    if (err) throw err;
-                    console.log("Succesfully inserted")
-                    runInterface()
-                })
-        })
+            }]).then(function (answer) {
+                var query = "INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)"
+                connection.query(query,
+                    [
+                        answer.add_employee_Fname,
+                        answer.add_employee_Lname,
+                        parseInt(answer.add_employee_roleid),
+                        JSON.parse(answer.add_employee_managerid)
+                    ],
+                    function (err) {
+                        if (err) throw err;
+                        console.log("Succesfully inserted")
+                        runInterface()
+                    })
+            })
     })
 }
 
 function updateRoles() {
     connection.query("SELECT title FROM roles; SELECT id FROM employees", function (err, res) {
         if (err) throw err;
-        console.log(res[0]);
-        console.log(res[1]);
         var questions = [
             {
                 name: "update_employee",
@@ -325,7 +314,6 @@ function updateRoles() {
             var question = "SELECT id FROM roles WHERE ?";
             connection.query(question, { title: answer.update_emprole }, function (err, res) {
                 if (err) throw err;
-                console.log(res)
                 connection.query("UPDATE employees SET ? WHERE ?", [{ role_id: res[0].id }, { id: answer.update_employee }], function (err) {
                     if (err) throw err;
                     console.log("update succesful!!")
@@ -339,7 +327,6 @@ function updateRoles() {
 function updateManagers() {
     connection.query("SELECT id FROM employees", function (err, res) {
         if (err) throw err;
-        console.log(res)
         var questions = [
             {
                 name: "update_employee",
@@ -358,7 +345,7 @@ function updateManagers() {
                 type: "rawlist",
                 message: "What manager do you wnat to change to?",
                 choices: function () {
-                    var choiceArray = []
+                    var choiceArray = ['null']
                     for (var i = 0; i < res.length; i++) {
                         choiceArray.push(res[i].id);
                     }
@@ -368,8 +355,7 @@ function updateManagers() {
 
         ]
         inquirer.prompt(questions).then(function (answer) {
-            console.log(answer)
-            connection.query("UPDATE employees SET ? WHERE ?", [{ manager_id: answer.update_empman }, { id: answer.update_employee }], function (err) {
+            connection.query("UPDATE employees SET ? WHERE ?", [{ manager_id: JSON.parse(answer.update_empman) }, { id: answer.update_employee }], function (err) {
                 if (err) throw err;
                 console.log("update succesful!!")
                 runInterface()
@@ -418,7 +404,16 @@ function delDepartment() {
             connection.query(query, { name: answer.del_dep }, function (err) {
                 if (err) throw err;
                 console.log("Succesfully deleted")
-                runInterface()
+                connection.query("SET @autoid:=0", function (err) {
+                    if (err) throw err;
+                    connection.query("UPDATE departments SET id= @autoid:=(@autoid + 1)", function (err) {
+                        if (err) throw err;
+                        connection.query("ALTER TABLE departments auto_increment = 1", function (err) {
+                            if (err) throw err;
+                            runInterface()
+                        })
+                    })
+                })
             })
         })
     })
@@ -440,15 +435,21 @@ function delRoles() {
             function (err) {
                 if (err) throw err;
                 console.log("Succesfully deleted")
-                runInterface()
+                connection.query("SET @autoid:=0", function (err) {
+                    if (err) throw err;
+                    connection.query("UPDATE roles SET id= @autoid:=(@autoid + 1)", function (err) {
+                        if (err) throw err;
+                        connection.query("ALTER TABLE roles auto_increment = 1", function (err) {
+                            if (err) throw err;
+                            runInterface()
+                        })
+                    })
+                })
             })
     })
 }
 
 function delEmployee() {
-    var questions = [
-
-    ]
     connection.query("SELECT id FROM employees", function (err, res) {
         inquirer.prompt({
             name: "del_employee",
@@ -470,7 +471,16 @@ function delEmployee() {
                 function (err) {
                     if (err) throw err;
                     console.log("Succesfully deleted")
-                    runInterface()
+                    connection.query("SET @autoid:=0", function (err) {
+                        if (err) throw err;
+                        connection.query("UPDATE employees SET id= @autoid:=(@autoid + 1)", function (err) {
+                            if (err) throw err;
+                            connection.query("ALTER TABLE employees auto_increment = 1", function (err) {
+                                if (err) throw err;
+                                runInterface()
+                            })
+                        })
+                    })
                 })
         })
     })
